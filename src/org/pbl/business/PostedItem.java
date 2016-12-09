@@ -6,6 +6,7 @@ import java.util.List;
 
 public class PostedItem {
     private int itemId;
+    private String name;
     private List<Category> categories;
     private String description;
     private String color;
@@ -16,6 +17,23 @@ public class PostedItem {
     private int processedFlag;
     private Date receivedDate;
     private int donorId;
+    private double price;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
 
     public List<Category> getCategories() {
         return categories;

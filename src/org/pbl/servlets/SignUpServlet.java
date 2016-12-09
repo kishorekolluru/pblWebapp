@@ -33,6 +33,10 @@ public class SignUpServlet extends HttpServlet {
 		user.setSecondName(req.getParameter("secondName"));
 		user.setZip(req.getParameter("zip"));
 		user.setState(req.getParameter("state"));
+		user.setUserType(req.getParameter("userType"));
+		if (!req.getParameter("userType").equals("donor"))
+			user.setSubscription(Boolean.valueOf(req
+					.getParameter("subscription")));
 
 		Login login = new Login();
 		login.setActive(true);

@@ -1,0 +1,20 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="pblWebapp:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/pblWebapp_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="pblWebapp/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="pblWebapp" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="gson-2.6.2" />
+          <element id="library" level="project" name="mysql-connector-java-5.1.40-bin" />
+          <element id="library" level="project" name="itextpdf-5.1.0" />
+          <element id="library" level="project" name="mail" />
+          <element id="library" level="project" name="activation" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

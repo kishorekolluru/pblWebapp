@@ -13,7 +13,7 @@ public class DBConnection {
 		Class.forName("com.mysql.jdbc.Driver");
 		Connection conn = DriverManager
 				.getConnection("jdbc:mysql://localhost/donation?"
-						+ "user=root&password=admin");
+						+ "user=root&password=kishore");
 		return conn;
 	}
 

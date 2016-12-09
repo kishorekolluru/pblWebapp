@@ -32,7 +32,8 @@ public class CreateItemServlet extends HttpServlet {
 		item.setDonorId(Integer.parseInt(req.getParameter("donorId")));
 		item.setItemType(req.getParameter("itemType"));
 		item.setPicture(req.getParameter("picture"));
-		item.setProcessed(Boolean.parseBoolean(req.getParameter("processed")));
+		//item.setProcessed(Boolean.parseBoolean(req.getParameter("processed")));
+		item.setProcessed(false);
 		item.setReceivedDate(req.getParameter("dateReceived"));
 		item.setSize(req.getParameter("size"));
 		PblResponse pblResponse = new ItemDao().createItem(item);

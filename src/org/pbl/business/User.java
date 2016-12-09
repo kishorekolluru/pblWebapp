@@ -24,6 +24,26 @@ public class User {
 
 	private String dob;
 
+	private String userType;
+
+	private Boolean subscription;
+
+	public Boolean getSubscription() {
+		return subscription;
+	}
+
+	public void setSubscription(Boolean subscription) {
+		this.subscription = subscription;
+	}
+
+	public String getUserType() {
+		return userType;
+	}
+
+	public void setUserType(String userType) {
+		this.userType = userType;
+	}
+
 	public String getState() {
 		return state;
 	}

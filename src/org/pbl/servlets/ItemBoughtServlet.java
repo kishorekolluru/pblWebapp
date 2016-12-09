@@ -3,6 +3,7 @@ package org.pbl.servlets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.geometry.Pos;
+import org.pbl.business.PblResponse;
 import org.pbl.business.PostedItem;
 import org.pbl.db.DBConnection;
 
@@ -29,13 +30,17 @@ public class ItemBoughtServlet extends HttpServlet {
         Scanner s = new Scanner(req.getInputStream(), "UTF-8").useDelimiter("\\A");
         String st = s.hasNext() ? s.next() : "";
 //        String json = st.substring(4);
-//        List<PostedItem> boughtItems = new Gson().fromJson(json, new TypeToken<List<PostedItem>>(){}.getType());
+        String buyerId = req.getHeader("buyerId");
+        List<PostedItem> boughtItems = new Gson().fromJson(st, new TypeToken<List<PostedItem>>(){}.getType());
         try {
             Connection conn = DBConnection.getConnection();
-            CallableStatement cst = conn.prepareCall("{call ITEM_BOUGHT_PROC(?, ?)}");
-            cst.setInt(1, 1);
-            cst.setInt(2, 3);
-            cst.execute();
+            for(int i=0; i<boughtItems.size();i++) {
+
+                CallableStatement cst = conn.prepareCall("{call ITEM_BOUGHT_PROC(?, ?)}");
+                cst.setInt(1, boughtItems.get(i).getItemId());
+                cst.setInt(2, Integer.parseInt(buyerId));
+                cst.execute();
+            }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (SQLException e) {
@@ -43,6 +48,9 @@ public class ItemBoughtServlet extends HttpServlet {
         }
 
         System.out.println("Body: " +st);
-        resp.getWriter().write("Now here is an output!");
+        PblResponse presp = new PblResponse();
+        presp.setStatus("success");
+
+        resp.getWriter().println(new Gson().toJson(presp, PblResponse.class));
     }
 }

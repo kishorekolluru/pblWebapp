@@ -1,14 +1,18 @@
 package org.pbl.db;
 
+import java.sql.Date;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.pbl.business.Login;
 import org.pbl.business.PblResponse;
 import org.pbl.business.User;
 import org.pbl.utils.DAOUtility;
 
-import java.sql.*;
-import java.text.ParseException;
-
-
+import com.mysql.jdbc.Connection;
+import com.mysql.jdbc.PreparedStatement;
+import com.mysql.jdbc.ResultSet;
 
 public class UserDAO {
 	private Connection connection = null;
@@ -88,6 +92,7 @@ public class UserDAO {
 
 	}
 
+	@SuppressWarnings("resource")
 	public Integer createUser(User user) {
 		Integer userId = null;
 		try {
@@ -105,12 +110,29 @@ public class UserDAO {
 			ps.setString(DAOUtility.NINE, user.getCountry());
 			ps.setDate(DAOUtility.TEN,
 					new Date(DAOUtility.sdf.parse(user.getDob()).getTime()));
+			ps.setString(DAOUtility.ELEVEN, user.getUserType());
 			int created = ps.executeUpdate();
 			if (created == 1) {
 				try (ResultSet generatedKeys = (ResultSet) ps
 						.getGeneratedKeys()) {
 					if (generatedKeys.next()) {
 						userId = generatedKeys.getInt(1);
+						user.setUserId(userId);
+						if (user.getUserType().equals("donor")) {
+							ps = (PreparedStatement) connection
+									.prepareStatement(DAOUtility.CREATE_DONOR);
+							ps.setInt(DAOUtility.ONE, userId);
+							ps.setInt(DAOUtility.TWO, 0);
+							ps.execute();
+						} else {
+							ps = (PreparedStatement) connection
+									.prepareStatement(DAOUtility.CREATE_CUSTOMER);
+							ps.setInt(DAOUtility.ONE, userId);
+							ps.setBoolean(DAOUtility.TWO,
+									user.getSubscription());
+							ps.execute();
+						}
+
 					} else {
 						throw new SQLException(
 								"Creating user failed, no ID obtained.");
@@ -127,10 +149,15 @@ public class UserDAO {
 		return userId;
 	}
 
+	@SuppressWarnings("finally")
 	public User getUserById(Integer userId) {
 
 		User user = null;
 		try {
+			if (connection == null) {
+				connection = (Connection) DBConnection.getConnection();
+			}
+
 			PreparedStatement ps = (PreparedStatement) connection
 					.prepareStatement(DAOUtility.USER_QUERY);
 			ps.setInt(DAOUtility.ONE, userId);
@@ -140,6 +167,7 @@ public class UserDAO {
 				user.setUserId(resultSet.getInt("userid"));
 				user.setAddress(resultSet.getString("firstname"));
 				user.setCity(resultSet.getString("secondname"));
+				user.setState(resultSet.getString("state"));
 				user.setCountry(resultSet.getString("country"));
 				user.setDob(resultSet.getString("dob"));
 				user.setEmail(resultSet.getString("email"));
@@ -147,13 +175,25 @@ public class UserDAO {
 				user.setPhone(resultSet.getString("phone"));
 				user.setSecondName(resultSet.getString("secondname"));
 				user.setZip(resultSet.getString("zip"));
+				user.setUserType(resultSet.getString("userType"));
 			}
 		} catch (SQLException e) {
 			e.getMessage();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
-			DBConnection.closeConn(connection);
+			if (!connection.isClosed()) {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+			}
+			return user;
 		}
-		return user;
+		// return ;
 	}
 
 }

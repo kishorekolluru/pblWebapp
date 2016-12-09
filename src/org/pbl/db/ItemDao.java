@@ -1,10 +1,15 @@
 package org.pbl.db;
 
 import org.pbl.business.Category;
+import org.pbl.business.DonorReceipt;
 import org.pbl.business.Item;
 import org.pbl.business.PblResponse;
 import org.pbl.business.PostedItem;
+import org.pbl.business.User;
 import org.pbl.utils.DAOUtility;
+
+import com.mysql.jdbc.CallableStatement;
+import com.pbl.email.SendMail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,22 +18,23 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by kishorekolluru on 12/1/16.
  */
 public class ItemDao {
 	Connection connection = null;
+	Random rand = new Random();
+	CallableStatement cstmt = null;
 
 	public List<PostedItem> getAllPostedItems() throws SQLException,
 			ClassNotFoundException {
 		Connection conn = DBConnection.getConnection();
 		List<PostedItem> allItemList = null;
 		PreparedStatement st = conn
-				.prepareStatement("select pi.itemId, i.Brand, i.description, i.color, i.ItemType,i.Size, cat.CategoryId, "
-						+ "  cat.Gender, cat.name as cat_description, i.datereceived, i.donorId, i.processed, i.picture, pi.posteddate, pi.price "
-						+ ",pi.discount, pi.brandvalue FROM posteditem pi INNER JOIN item i ON pi.itemId = i.ItemId "
-						+ "INNER JOIN itemcat ic on ic.itemid = pi.itemId INNER JOIN category cat on ic.catid = cat.CategoryId;");
+				.prepareStatement("select i.name, pi.itemId, pi.price, i.Brand, i.description, i.color, i.ItemType,i.Size, i.datereceived, i.donorId, i.processed, i.picture, pi.posteddate, pi.price\n" +
+						",pi.discount, pi.brandvalue FROM posteditem pi INNER JOIN item i ON pi.itemId = i.ItemId;");
 		try {
 
 			ResultSet rs = st.executeQuery();
@@ -45,6 +51,9 @@ public class ItemDao {
 				item.setDonorId(rs.getInt("donorId"));
 				item.setPicture(rs.getString("picture"));
 				item.setProcessedFlag(rs.getInt("processed"));
+				item.setPrice(rs.getDouble("price"));
+				//new columns
+				item.setName(rs.getString("name"));
 				item.setCategories(getCategoriesForItem(item.getItemId(), conn));
 				allItemList.add(item);
 			}
@@ -115,18 +124,7 @@ public class ItemDao {
 			e.getMessage();
 			e.printStackTrace();
 		} finally {
-			try {
-				if (!connection.isClosed()) {
-					try {
-						connection.close();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			DBConnection.closeConn(connection);
 			return pblResponse;
 		}
 	}
@@ -144,10 +142,7 @@ public class ItemDao {
 			ps.setString(DAOUtility.THREE, item.getItemType());
 			ps.setString(DAOUtility.FOUR, item.getSize());
 			ps.setString(DAOUtility.FIVE, item.getBrand());
-			ps.setDate(
-					DAOUtility.SIX,
-					new java.sql.Date(DAOUtility.sdf.parse(
-							item.getReceivedDate()).getTime()));
+			ps.setDate(DAOUtility.SIX, new java.sql.Date(new Date().getTime()));
 			ps.setInt(DAOUtility.SEVEN, item.getDonorId());
 			ps.setString(DAOUtility.EIGHT, item.getPicture());
 			ps.setBoolean(DAOUtility.NINE, item.getProcessed());
@@ -157,10 +152,29 @@ public class ItemDao {
 						.getGeneratedKeys()) {
 					if (generatedKeys.next()) {
 						item.setItemId(generatedKeys.getInt(1));
+						cstmt = (CallableStatement) connection
+								.prepareCall(DAOUtility.INCREMENT_DONATED_COUNT);
+						cstmt.setInt(DAOUtility.ONE, item.getDonorId());
+						cstmt.execute();
 					}
 				}
 				pblResponse.setResponse(item);
 				pblResponse.setStatus("success");
+				User donor = new UserDAO().getUserById(item.getDonorId());
+				DonorReceipt donorReceipt = new DonorReceipt();
+				donorReceipt.setEmail(donor.getEmail());
+				donorReceipt.setDonorName(donor.getFirstName() + " "
+						+ donor.getSecondName());
+				donorReceipt.setDonorAddress(donor.getAddress() + ", "
+						+ donor.getCity() + ", " + donor.getCountry());
+				donorReceipt.setTaxGift((rand.nextInt((20 - 1) + 1) + 1) + "$");
+				donorReceipt.setDonatedOn(DAOUtility.sdf.format(new Date()));
+				donorReceipt.setReceiptNo(item.getItemId().toString());
+				donorReceipt.setItem(item.getDescription());
+				donorReceipt.setReceiptDate(DAOUtility.sdf.format(new Date()));
+
+				new SendMail().sendReceipt(donorReceipt);
+
 			}
 
 		} catch (SQLException e) {
@@ -169,21 +183,10 @@ public class ItemDao {
 			e.getMessage();
 			e.printStackTrace();
 		} finally {
-			try {
-				if (!connection.isClosed()) {
-					try {
-						connection.close();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-
-				}
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			DBConnection.closeConn(connection);
 			return pblResponse;
 		}
+		return pblResponse;
 
 	}
 }
